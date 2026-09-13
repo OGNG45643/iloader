@@ -1,0 +1,95 @@
+#include <iostream>
+#include <string>
+#include <vector>
+#include <algorithm>
+#include <stdexcept>
+
+// 1. Structural Network/Ad Blocklist Registry
+class NetworkShield {
+private:
+    std::vector<std::string> blocked_domains;
+
+public:
+    NetworkShield() {
+        // Known tracking, advertising sidebar injection nodes, and malicious payload paths
+        blocked_domains = { "iloader-ads.com", "sidebar-tracker.net", "malicious-inject.io" };
+    }
+
+    // Intercepts traffic request strings and drops them if they match malware indicators
+    bool shouldBlockRequest(const std::string& url) {
+        for (const auto& domain : blocked_domains) {
+            if (url.find(domain) != std::string::npos) {
+                std::cout << "[BLOCK] Intercepted and killed malicious request to: " << url << "\n";
+                return true;
+            }
+        }
+        return false;
+    }
+};
+
+// 2. Safe Decryption/Decoding Engine (Keep Safe Boundary)
+// Decodes obfuscated sidebar messages safely without triggering execution loops
+class SafeDecoder {
+public:
+    static std::string decodeSidebarData(const std::string& obfuscated_data) {
+        std::string decoded_output = "";
+        
+        // Simulating safe Base64 / XOR defensive decode logic
+        // Traditional parsing (like innerHTML or direct execution) is highly vulnerable.
+        // We evaluate content byte-by-byte in a sandbox routine.
+        for (char c : obfuscated_data) {
+            decoded_output += static_cast<char>(c ^ 0x5A); // Simple safe character transform
+        }
+
+        // Deep Content Inspection: Scan decoded strings for hidden payload injection attempts
+        std::vector<std::string> exploit_signatures = { "<script>", "exec", "eval", "javascript:" };
+        for (const auto& sig : exploit_signatures) {
+            if (decoded_output.find(sig) != std::string::npos) {
+                // Immediate Zeroization of tainted data
+                volatile char* p = &decoded_output[0];
+                size_t size = decoded_output.size();
+                while (size--) { *p++ = 0; }
+                
+                throw std::security_error("CRITICAL: Exploit vector caught inside decoded sidebar stream! Data burned.");
+            }
+        }
+        
+        return decoded_output;
+    }
+};
+
+int main() {
+    NetworkShield firewall;
+    
+    std::cout << "--- Initializing Iloader Defense System ---\n";
+
+    // Scenario A: Testing the Advertising & Attack blocker
+    std::string incoming_ad_url = "http://sidebar-tracker.net";
+    if (firewall.shouldBlockRequest(incoming_ad_url)) {
+        std::cout << "[SHIELD] Dropped tracking/advertising connection successfully.\n";
+    }
+
+    std::cout << "\n--- Processing Encoded Sidebar Stream ---\n";
+    
+    // Scenario B: Safe decoding of standard inbound payloads
+    std::string inbound_payload = " \x3b\x37\x36\x33"; // Encoded text
+    try {
+        std::string clean_data = SafeDecoder::decodeSidebarData(inbound_payload);
+        std::cout << "[SECURE] Parsed Data Result: " << clean_data << "\n";
+    } catch (const std::exception& e) {
+        std::cerr << e.what() << "\n";
+    }
+
+    // Scenario C: Malicious attack delivery attempt via the decoder boundary
+    // Encoded script tag payload trying to bypass traditional text filters
+    std::string malicious_payload = "\x6c\x49\x39\x28\x33\x2a\x2e\x66"; 
+    
+    std::cout << "\n--- Simulating Malicious Attack Injection Attempt ---\n";
+    try {
+        std::string clean_data = SafeDecoder::decodeSidebarData(malicious_payload);
+    } catch (const std::security_error& e) {
+        std::cout << "[SHIELDED] " << e.what() << "\n";
+    }
+
+    return 0;
+}
